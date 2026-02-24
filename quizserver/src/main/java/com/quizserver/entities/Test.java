@@ -4,7 +4,6 @@ import com.quizserver.dto.TestDTO;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-import com.quizserver.entities.Question;
 
 import java.util.List;
 
@@ -22,6 +21,9 @@ public class Test {
 
     private Long time;
 
+    @Column(nullable = false)
+    private String category;
+
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<Question> questions;
@@ -33,6 +35,7 @@ public class Test {
         dto.setTitle(title);
         dto.setDescription(description);
         dto.setTime(time);
+        dto.setCategory(category);
 
         return dto;
     }

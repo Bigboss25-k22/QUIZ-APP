@@ -16,14 +16,10 @@ import java.util.Date;
 public class JwtUtil {
 
     @Value("${jwt.secret}")
-    private  String SECRET_KEY;
+    private String SECRET_KEY;
 
     @Value("${jwt.access.expiration}")
     private long ACCESS_TOKEN_EXPIRATION;
-
-    @Value("${jwt.refresh.expiration}")
-    private long REFRESH_TOKEN_EXPIRATION;
-
 
     private Key getSigningKey() {
         byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
@@ -35,24 +31,13 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("role", user.getRole().name())
-                .issuedAt(new java.util.Date(now))
-                .expiration(new java.util.Date(now + ACCESS_TOKEN_EXPIRATION))
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + ACCESS_TOKEN_EXPIRATION))
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    public String generateRefreshToken(User user) {
-
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .subject(user.getEmail())
-                .issuedAt(new java.util.Date(now))
-                .expiration(new java.util.Date(now + REFRESH_TOKEN_EXPIRATION))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
-    public Claims extractClaims(String token){
+    public Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
                 .build()
@@ -68,6 +53,4 @@ public class JwtUtil {
     private boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
-
-
 }

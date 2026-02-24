@@ -1,7 +1,6 @@
 package com.quizserver.services.test;
 
 import com.quizserver.dto.*;
-import com.quizserver.entities.Test;
 
 import java.util.List;
 
@@ -12,6 +11,8 @@ public interface TestService {
     QuestionDTO addQuestionToTest(QuestionDTO dto);
 
     List<TestDTO> getAllTests();
+
+    PageResponse<TestDTO> getTests(int page, int size, String category, String search);
 
     TestDetailsDTO getAllQuestionsByTest(Long id);
 

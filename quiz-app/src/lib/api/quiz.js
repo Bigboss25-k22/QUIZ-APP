@@ -1,43 +1,46 @@
-import { apiFetch } from "@/lib/apiClient";
+import axiosInstance from "../axiosInstance";
 
-export function getTestList() {
-    return apiFetch("/test");
+export async function getTestList(page = 0, size = 10, category = null, search = null) {
+    const params = new URLSearchParams();
+    params.append('page', page);
+    params.append('size', size);
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+
+    const response = await axiosInstance.get(`/api/test?${params.toString()}`);
+    return response.data;
 }
 
-export function getQuizDetail(id) {
-    return apiFetch(`/test/${id}`);
+export async function getQuizDetail(id) {
+    const response = await axiosInstance.get(`/api/test/${id}`);
+    return response.data;
 }
 
-// Lấy chi tiết test với questions (sử dụng backend structure)
-export function getTestDetails(testId) {
-    return apiFetch(`/test/${testId}`);
+export async function getTestDetails(testId) {
+    const response = await axiosInstance.get(`/api/test/${testId}`);
+    return response.data;
 }
 
-// Submit test theo format backend yêu cầu
-export function submitTest(testId, userId, responses) {
-    return apiFetch("/test/submit-test", {
-        method: "POST",
-        body: JSON.stringify({
-            testId: testId,
-            userId: userId,
-            responses: responses
-        }),
+export async function submitTest(testId, userId, responses) {
+    const response = await axiosInstance.post("/api/test/submit-test", {
+        testId,
+        userId,
+        responses
     });
+    return response.data;
 }
 
-// Lấy tất cả kết quả test
-export function getAllTestResults() {
-    return apiFetch("/test-results");
+export async function getAllTestResults() {
+    const response = await axiosInstance.get("/api/test/test-results");
+    return response.data;
 }
 
-// Lấy kết quả test theo user
-export function getTestResultsByUser(userId) {
-    return apiFetch(`/test-results/${userId}`);
+export async function getTestResultsByUser(userId) {
+    const response = await axiosInstance.get(`/api/test/test-results/${userId}`);
+    return response.data;
 }
 
-export function submitQuiz(id, answers) {
-    return apiFetch(`/quiz/${id}/submit`, {
-        method: "POST",
-        body: JSON.stringify({ answers }),
-    });
+export async function submitQuiz(id, answers) {
+    const response = await axiosInstance.post(`/api/quiz/${id}/submit`, { answers });
+    return response.data;
 }

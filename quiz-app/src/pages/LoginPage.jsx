@@ -20,7 +20,8 @@ const LoginPage = () => {
 
     try {
       const data = await callApi({ email, password });
-      login(data && data.user ? data.user : { email });
+      // data contains: { accessToken, refreshToken, user }
+      login(data);
       navigate("/");
     } catch {}
   };

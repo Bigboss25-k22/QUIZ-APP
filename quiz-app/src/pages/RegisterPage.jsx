@@ -5,6 +5,7 @@ import { registerUser } from "@/lib/api/auth";
 
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
@@ -12,12 +13,12 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !confirmPassword) return;
+    if (!email || !name || !password || !confirmPassword) return;
     if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) return;
     if (password.length < 6) return;
     if (password !== confirmPassword) return;
     try {
-      await callApi({ email, password });
+      await callApi({ email, password, name });
       navigate("/login");
     } catch {}
   };
@@ -55,6 +56,17 @@ const RegisterPage = () => {
               onChange={e => setEmail(e.target.value)}
               required
               placeholder="name@company.com"
+            />
+          </div>
+          <div>
+            <label className="text-left block mb-1 font-medium">Your name</label>
+            <input
+              type="text"
+              className="w-full px-4 py-2 rounded-lg border border-border bg-background dark:bg-background focus:outline-none focus:border-primary"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              placeholder="John Doe"
             />
           </div>
           <div>

@@ -13,6 +13,9 @@ import com.quizserver.repository.TestResultReponsitory;
 import com.quizserver.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
@@ -67,6 +70,50 @@ public class TestServiceImpl implements TestService {
                 .peek(test -> test.setTime(test.getQuestions().size() * test.getTime()))
                 .toList()
                 .stream().map(Test::getDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<TestDTO> getTests(int page, int size, String category, String search) {
+        // Validate page and size parameters
+        if (page < 0) {
+            throw new IllegalArgumentException("Page number cannot be negative");
+        }
+        if (size < 0) {
+            throw new IllegalArgumentException("Page size cannot be negative");
+        }
+
+        // Default values
+        if (size == 0) {
+            size = 10;
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Test> testPage;
+
+        // Apply filters based on provided parameters
+        if (category != null && !category.isEmpty() && search != null && !search.isEmpty()) {
+            testPage = testRepository.findByCategoryAndTitleContainingIgnoreCase(category, search, pageable);
+        } else if (category != null && !category.isEmpty()) {
+            testPage = testRepository.findByCategory(category, pageable);
+        } else if (search != null && !search.isEmpty()) {
+            testPage = testRepository.findByTitleContainingIgnoreCase(search, pageable);
+        } else {
+            testPage = testRepository.findAll(pageable);
+        }
+
+        // Convert to PageResponse
+        PageResponse<TestDTO> response = new PageResponse<>();
+        response.setContent(testPage.getContent().stream()
+                .peek(test -> test.setTime(test.getQuestions().size() * test.getTime()))
+                .map(Test::getDto)
+                .collect(Collectors.toList()));
+        response.setCurrentPage(testPage.getNumber());
+        response.setPageSize(testPage.getSize());
+        response.setTotalElements(testPage.getTotalElements());
+        response.setTotalPages(testPage.getTotalPages());
+        response.setLast(testPage.isLast());
+
+        return response;
     }
 
     public TestDetailsDTO getAllQuestionsByTest(Long id) {

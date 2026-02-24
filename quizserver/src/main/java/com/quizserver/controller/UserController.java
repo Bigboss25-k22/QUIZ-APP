@@ -3,48 +3,71 @@ package com.quizserver.controller;
 import com.quizserver.dto.UserDTO;
 import com.quizserver.entities.User;
 import com.quizserver.services.user.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import com.quizserver.exception.BadRequestException;
-import com.quizserver.exception.UnauthorizedException;
-
 @RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Allow all origins for CORS
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+@Tag(name = "User Profile", description = "User profile management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @PostMapping("/sign-up")
-    public ResponseEntity<?> signUp(@RequestBody User user) {
-        if (userService.hasUserWithEmail(user.getEmail())) {
-            throw new BadRequestException("User with this email already exists");
-        }
-
-        User createdUser = userService.createUser(user);
-        if (createdUser != null) {
-            return new ResponseEntity<>(createdUser, HttpStatus.OK);
-        } else {
-            throw new BadRequestException("User not created, come again later");
-        }
+    @GetMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get current user profile", description = "Get the profile information of the currently authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<UserDTO> getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userService.getUserByEmail(email);
+        
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(user.getId());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setName(user.getName());
+        
+        return ResponseEntity.ok(userDTO);
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
-        User dbUser = userService.login(user);
-        if (dbUser != null) {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setId(dbUser.getId());
-            userDTO.setName(dbUser.getName());
-            userDTO.setEmail(dbUser.getEmail());
-
-            return new ResponseEntity<>(userDTO, HttpStatus.OK);
-        } else {
-            throw new UnauthorizedException("Email and password do not match");
-        }
+    @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update user profile", description = "Update the name and email of the currently authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<UserDTO> updateProfile(@Valid @RequestBody UserDTO userDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User updatedUser = userService.updateUserProfile(email, userDTO);
+        
+        UserDTO responseDTO = new UserDTO();
+        responseDTO.setId(updatedUser.getId());
+        responseDTO.setEmail(updatedUser.getEmail());
+        responseDTO.setName(updatedUser.getName());
+        
+        return ResponseEntity.ok(responseDTO);
     }
 }

@@ -12,6 +12,6 @@ public class TestDTO {
     private String description;
 
     private Long time;
+
+    private String category;
 }
-
-
