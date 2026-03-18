@@ -20,10 +20,11 @@ const LoginPage = () => {
 
     try {
       const data = await callApi({ email, password });
-      // data contains: { accessToken, refreshToken, user }
       login(data);
       navigate("/");
-    } catch {}
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (

@@ -26,6 +26,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken createRefreshToken(User user) {
         // Delete existing refresh token for this user if any
         refreshTokenRepository.deleteByUserId(user.getId());
+        refreshTokenRepository.flush();
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);

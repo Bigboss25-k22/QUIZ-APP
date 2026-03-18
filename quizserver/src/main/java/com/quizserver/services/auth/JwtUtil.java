@@ -1,6 +1,7 @@
 package com.quizserver.services.auth;
 
 import com.quizserver.entities.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,9 +46,9 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public boolean isTokenValid(String token, User user) {
+    public boolean isTokenValid(String token, UserDetails userDetails) {
         final String email = extractClaims(token).getSubject();
-        return (email.equals(user.getEmail()) && !isTokenExpired(token));
+        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {

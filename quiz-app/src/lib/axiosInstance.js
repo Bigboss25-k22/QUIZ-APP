@@ -49,6 +49,11 @@ axiosInstance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Skip interceptor auto-refresh for login/register endpoints
+        if (originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register')) {
+            return Promise.reject(error);
+        }
+
         // Handle 401 Unauthorized - Token expired
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
@@ -86,7 +91,9 @@ axiosInstance.interceptors.response.use(
                     authContextFunctions.logout();
                 }
                 // Redirect to login page
-                window.location.href = '/login';
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
                 return Promise.reject(refreshError);
             }
         }
