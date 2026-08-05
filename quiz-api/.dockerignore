@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+.gradle
+.vscode
+.git
+.env
+npm-debug.log
+target

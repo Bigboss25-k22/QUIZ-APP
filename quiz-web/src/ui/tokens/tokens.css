@@ -1,0 +1,40 @@
+:root {
+  --canvas: #f6f8fc;
+  --surface: #ffffff;
+  --ink: #101a31;
+  --muted: #647089;
+  --line: #dce3ef;
+  --cobalt: #2457d6;
+  --cobalt-strong: #1945b3;
+  --cobalt-soft: #e8eeff;
+  --success: #0f766e;
+  --success-soft: #e1f4f1;
+  --signal: #c2412d;
+  --signal-soft: #fff0ec;
+  --warning: #a15c08;
+  --warning-soft: #fff6df;
+  --shadow-surface: 0 18px 50px -34px rgba(16, 26, 49, 0.45);
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+}
+
+@theme inline {
+  --color-paper: var(--canvas);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-slate: var(--muted);
+  --color-line: var(--line);
+  --color-cobalt: var(--cobalt);
+  --color-cobalt-strong: var(--cobalt-strong);
+  --color-cobalt-soft: var(--cobalt-soft);
+  --color-teal: var(--success);
+  --color-teal-soft: var(--success-soft);
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --font-display: "Archivo Variable", sans-serif;
+  --font-body: "IBM Plex Sans Variable", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
