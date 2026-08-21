@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { tokenPairSchema } from "@/lib/http/token-schema";
 
 const requiredText = (label: string) => z.string().trim().min(1, { error: `${label} là bắt buộc.` });
 
@@ -9,7 +8,7 @@ export const userSchema = z.object({
   email: z.email(),
 });
 
-export const authResponseSchema = tokenPairSchema.extend({ user: userSchema });
+export const authResponseSchema = z.object({ user: userSchema });
 
 export const loginSchema = z.object({
   email: z.email({ error: "Email chưa đúng định dạng." }),

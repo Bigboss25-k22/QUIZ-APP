@@ -1,0 +1,138 @@
+name: CD - Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công trên GitHub để demo
+
+permissions:
+  id-token: write # Bắt buộc để xác thực Azure OIDC (không cần password/secret)
+  contents: read
+
+concurrency:
+  group: cd-azure-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ==========================================
+  # JOB 1: BUILD & DEPLOY BACKEND (quiz-api)
+  # ==========================================
+  deploy-backend:
+    name: Deploy Backend (quiz-api)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ vars.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET || '' }}
+
+      - name: Alternative ACR Login via Azure CLI
+        run: |
+          az acr login --name ${{ vars.ACR_LOGIN_SERVER }}
+
+      - name: Build & Push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./quiz-api
+          file: ./quiz-api/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/quiz-api:${{ github.sha }}
+            ${{ vars.ACR_LOGIN_SERVER }}/quiz-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy Backend to Azure Container Apps (Lowest Cost Profile)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            echo "🚀 Updating Container App: quiz-api (Low Cost: 0.25 CPU, 0.5Gi RAM, Scale-to-0)..."
+            az containerapp update \
+              --name quiz-api \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+              --image ${{ vars.ACR_LOGIN_SERVER }}/quiz-api:${{ github.sha }} \
+              --cpu 0.25 \
+              --memory 0.5Gi \
+              --min-replicas 0 \
+              --max-replicas 1 \
+              --set-env-vars \
+                "SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}" \
+                "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
+                "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+                "SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver" \
+                "SPRING_JPA_HIBERNATE_DDL_AUTO=update" \
+                "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+                "SERVER_PORT=8080" \
+                "ACCESS_TOKEN_EXPIRATION=900000" \
+                "REFRESH_TOKEN_EXPIRATION=604800000"
+
+  # ==========================================
+  # JOB 2: BUILD & DEPLOY FRONTEND (quiz-web)
+  # ==========================================
+  deploy-frontend:
+    name: Deploy Frontend (quiz-web)
+    runs-on: ubuntu-latest
+    needs: [ deploy-backend ] # Chạy sau khi backend deploy thành công
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry via Azure CLI
+        run: |
+          az acr login --name ${{ vars.ACR_LOGIN_SERVER }}
+
+      - name: Build & Push Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./quiz-web
+          file: ./quiz-web/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.ACR_LOGIN_SERVER }}/quiz-web:${{ github.sha }}
+            ${{ vars.ACR_LOGIN_SERVER }}/quiz-web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy Frontend to Azure Container Apps (Lowest Cost Profile)
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            echo "🚀 Updating Container App: quiz-web (Low Cost: 0.25 CPU, 0.5Gi RAM, Scale-to-0)..."
+            az containerapp update \
+              --name quiz-web \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+              --image ${{ vars.ACR_LOGIN_SERVER }}/quiz-web:${{ github.sha }} \
+              --cpu 0.25 \
+              --memory 0.5Gi \
+              --min-replicas 0 \
+              --max-replicas 1 \
+              --set-env-vars \
+                "NODE_ENV=production" \
+                "PORT=3000" \
+                "API_ORIGIN=${{ vars.API_ORIGIN }}" \
+                "APP_ORIGIN=${{ vars.APP_ORIGIN }}"

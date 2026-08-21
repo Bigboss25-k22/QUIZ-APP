@@ -16,6 +16,14 @@ public class SpringSecurityUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = users.getByEmail(email);
+        return toUserDetails(user);
+    }
+
+    public UserDetails loadUserById(Long id) throws UsernameNotFoundException {
+        return toUserDetails(users.getById(id));
+    }
+
+    private UserDetails toUserDetails(User user) {
         return org.springframework.security.core.userdetails.User.withUsername(user.getEmail())
                 .password(user.getPassword()).roles(user.getRole().name()).build();
     }

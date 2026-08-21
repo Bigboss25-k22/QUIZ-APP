@@ -1,6 +1,7 @@
 package com.quiz.api.security;
 
 import com.quiz.api.auth.application.port.out.AccessTokenService;
+import com.quiz.api.auth.application.port.out.RefreshTokenRepositoryPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,11 +14,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AccessTokenService tokens;
+    private final RefreshTokenRepositoryPort refreshTokens;
     private final SpringSecurityUserDetailsService userDetailsService;
 
     @Override
@@ -29,10 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         String token = authorization.substring(7);
-        tokens.subjectOf(token).ifPresent(email -> {
+        tokens.parse(token).ifPresent(claims -> {
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails user = userDetailsService.loadUserByUsername(email);
-                if (tokens.isValidFor(token, user.getUsername())) {
+                boolean activeSession = refreshTokens.findByUserId(claims.userId())
+                        .filter(session -> session.getExpiryDate().isAfter(Instant.now()))
+                        .map(session -> session.getCreatedAt().equals(claims.sessionStartedAt()))
+                        .orElse(false);
+                if (activeSession) {
+                    UserDetails user = userDetailsService.loadUserById(claims.userId());
                     SecurityContextHolder.getContext().setAuthentication(
                             new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
                 }

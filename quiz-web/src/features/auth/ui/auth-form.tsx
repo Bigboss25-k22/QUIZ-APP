@@ -48,7 +48,7 @@ function RegisterForm() {
   const submit = handleSubmit(async (values) => {
     try {
       await mutation.mutateAsync(values);
-      router.replace("/login");
+      router.replace("/dashboard");
     } catch (error) {
       setError("root.server", { message: getApiErrorMessage(error, "Không thể tạo tài khoản. Vui lòng thử lại.") });
     }

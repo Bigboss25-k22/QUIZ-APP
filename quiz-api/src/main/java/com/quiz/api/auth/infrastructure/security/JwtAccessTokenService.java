@@ -1,6 +1,7 @@
 package com.quiz.api.auth.infrastructure.security;
 
 import com.quiz.api.auth.application.port.out.AccessTokenService;
+import com.quiz.api.auth.application.port.out.AccessTokenClaims;
 import com.quiz.api.user.domain.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
@@ -22,23 +24,24 @@ public class JwtAccessTokenService implements AccessTokenService {
     private long accessTokenExpiration;
 
     @Override
-    public String issueFor(User user) {
+    public String issueFor(User user, Instant sessionStartedAt) {
         long now = System.currentTimeMillis();
-        return Jwts.builder().subject(user.getEmail()).claim("role", user.getRole().name())
+        return Jwts.builder().subject(user.getId().toString()).claim("role", user.getRole().name())
+                .claim("sessionStartedAt", sessionStartedAt.toEpochMilli())
                 .issuedAt(new Date(now)).expiration(new Date(now + accessTokenExpiration))
                 .signWith(signingKey()).compact();
     }
 
     @Override
-    public Optional<String> subjectOf(String token) {
-        try { return Optional.of(claims(token).getSubject()); }
+    public Optional<AccessTokenClaims> parse(String token) {
+        try {
+            Claims claims = claims(token);
+            Long userId = Long.valueOf(claims.getSubject());
+            Number sessionStartedAt = claims.get("sessionStartedAt", Number.class);
+            if (sessionStartedAt == null) return Optional.empty();
+            return Optional.of(new AccessTokenClaims(userId, Instant.ofEpochMilli(sessionStartedAt.longValue())));
+        }
         catch (JwtException | IllegalArgumentException exception) { return Optional.empty(); }
-    }
-
-    @Override
-    public boolean isValidFor(String token, String subject) {
-        try { return subject.equals(claims(token).getSubject()) && claims(token).getExpiration().after(new Date()); }
-        catch (JwtException | IllegalArgumentException exception) { return false; }
     }
 
     private Claims claims(String token) {

@@ -28,7 +28,8 @@ export function parseApiResponse<T>(schema: ZodType<T>, data: unknown, endpoint:
 
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiContractError) return "Máy chủ trả về dữ liệu không hợp lệ. Vui lòng thử lại sau.";
-  if (!axios.isAxiosError(error)) return error instanceof Error ? error.message : fallback;
+  if (!axios.isAxiosError(error)) return fallback;
+  if ((error.response?.status ?? 0) >= 500) return "Hệ thống đang gặp sự cố. Vui lòng thử lại sau.";
   const parsed = errorResponseSchema.safeParse(error.response?.data);
   return parsed.success ? parsed.data.message : fallback;
 }

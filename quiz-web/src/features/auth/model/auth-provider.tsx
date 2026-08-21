@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "zustand";
 import { authApi } from "../api/auth-api";
-import { configureAuthClient, getStoredRefreshToken, setAccessToken, storeRefreshToken } from "@/lib/http/client";
+import { configureAuthClient } from "@/lib/http/client";
 import { authKeys, authQueries } from "./auth-queries";
 import { createAuthSessionStore, type AuthSessionState, type AuthSessionStore } from "./auth-session-store";
 
@@ -29,8 +29,7 @@ function AuthBootstrap() {
   const setAnonymous = useAuthSessionStore((state) => state.setAnonymous);
 
   const clearSession = useCallback(() => {
-    setAccessToken(null);
-    storeRefreshToken(null);
+    window.localStorage.removeItem("quiz_refresh_token");
     queryClient.removeQueries({ queryKey: authKeys.all });
     setAnonymous();
   }, [queryClient, setAnonymous]);
@@ -45,15 +44,9 @@ function AuthBootstrap() {
     });
 
     const restoreTimer = window.setTimeout(async () => {
-      const refreshToken = getStoredRefreshToken();
-      if (!refreshToken) {
-        setAnonymous();
-        return;
-      }
       try {
-        const tokens = await authApi.refresh(refreshToken);
-        setAccessToken(tokens.accessToken);
-        storeRefreshToken(tokens.refreshToken);
+        window.localStorage.removeItem("quiz_refresh_token");
+        await authApi.refresh();
         const user = await authApi.profile();
         queryClient.setQueryData(authKeys.profile(), user);
         setAuthenticated();

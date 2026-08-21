@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface RefreshTokenRepositoryPort {
     RefreshToken save(RefreshToken token);
-    Optional<RefreshToken> findByToken(String token);
-    void deleteByToken(String token);
-    void deleteByUserId(Long userId);
+    Optional<RefreshToken> findByTokenHash(String tokenHash);
+    Optional<RefreshToken> findByUserId(Long userId);
+    void deleteByTokenHash(String tokenHash);
 }

@@ -6,8 +6,8 @@ describe("auth schemas", () => {
     expect(userSchema.parse({ id: 1, name: "An", email: "an@example.com", role: "USER" })).toEqual({ id: 1, name: "An", email: "an@example.com" });
   });
 
-  it("từ chối auth response thiếu token", () => {
-    expect(() => authResponseSchema.parse({ refreshToken: "refresh", user: { id: 1, name: "An", email: "an@example.com" } })).toThrow();
+  it("từ chối auth response thiếu user", () => {
+    expect(() => authResponseSchema.parse({ accessToken: "access" })).toThrow();
   });
 
   it("validate login và password đăng ký theo contract backend", () => {

@@ -20,22 +20,22 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenRepositoryPor
     public RefreshToken save(RefreshToken token) { return toDomain(repository.save(toEntity(token))); }
 
     @Override
-    public Optional<RefreshToken> findByToken(String token) { return repository.findByToken(token).map(this::toDomain); }
+    public Optional<RefreshToken> findByTokenHash(String tokenHash) { return repository.findByTokenHash(tokenHash).map(this::toDomain); }
 
     @Override
-    public void deleteByToken(String token) { repository.deleteByToken(token); }
+    public Optional<RefreshToken> findByUserId(Long userId) { return repository.findByUserId(userId).map(this::toDomain); }
 
     @Override
-    public void deleteByUserId(Long userId) { repository.deleteByUserId(userId); }
+    public void deleteByTokenHash(String tokenHash) { repository.deleteByTokenHash(tokenHash); }
 
     private RefreshToken toDomain(RefreshTokenEntity entity) {
-        return new RefreshToken(entity.getId(), entity.getToken(), entity.getUser().getId(), entity.getExpiryDate(), entity.getCreatedAt());
+        return new RefreshToken(entity.getId(), entity.getTokenHash(), entity.getUser().getId(), entity.getExpiryDate(), entity.getCreatedAt());
     }
 
     private RefreshTokenEntity toEntity(RefreshToken token) {
         RefreshTokenEntity entity = new RefreshTokenEntity();
         entity.setId(token.getId());
-        entity.setToken(token.getToken());
+        entity.setTokenHash(token.getTokenHash());
         entity.setUser(entityManager.getReference(UserEntity.class, token.getUserId()));
         entity.setExpiryDate(token.getExpiryDate());
         entity.setCreatedAt(token.getCreatedAt());
