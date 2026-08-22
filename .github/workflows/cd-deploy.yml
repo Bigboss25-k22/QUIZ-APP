@@ -54,6 +54,17 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
+            echo "🔑 Configuring ACR pull access on quiz-api..."
+            ACR_NAME=$(echo "${{ vars.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+            ACR_USER=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
+            ACR_PASS=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
+            az containerapp registry set \
+              --name quiz-api \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+              --server ${{ vars.ACR_LOGIN_SERVER }} \
+              --username $ACR_USER \
+              --password $ACR_PASS
+
             echo "🚀 Updating Container App: quiz-api (Low Cost: 0.25 CPU, 0.5Gi RAM, Scale-to-0)..."
             az containerapp update \
               --name quiz-api \
@@ -115,6 +126,17 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
+            echo "🔑 Configuring ACR pull access on quiz-web..."
+            ACR_NAME=$(echo "${{ vars.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+            ACR_USER=$(az acr credential show --name $ACR_NAME --query "username" -o tsv)
+            ACR_PASS=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
+            az containerapp registry set \
+              --name quiz-web \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+              --server ${{ vars.ACR_LOGIN_SERVER }} \
+              --username $ACR_USER \
+              --password $ACR_PASS
+
             echo "🚀 Updating Container App: quiz-web (Low Cost: 0.25 CPU, 0.5Gi RAM, Scale-to-0)..."
             az containerapp update \
               --name quiz-web \
